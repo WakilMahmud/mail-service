@@ -1,0 +1,78 @@
+{
+    "$schema": "https://json.schemastore.org/nest-cli",
+    "collection": "@nestjs/schematics",
+    "monorepo": true,
+    "root": "apps/mail-api",
+    "sourceRoot": "apps/mail-api/src",
+    "compilerOptions": {
+        "webpack": false,
+        "tsConfigPath": "apps/mail-api/tsconfig.app.json",
+        "assets": [],
+        "deleteOutDir": true
+    },
+    "projects": {
+        "mail-api": {
+            "type": "application",
+            "root": "apps/mail-api",
+            "entryFile": "main",
+            "sourceRoot": "apps/mail-api/src",
+            "compilerOptions": {
+                "tsConfigPath": "apps/mail-api/tsconfig.app.json"
+            }
+        },
+        "mail-worker": {
+            "type": "application",
+            "root": "apps/mail-worker",
+            "entryFile": "main",
+            "sourceRoot": "apps/mail-worker/src",
+            "compilerOptions": {
+                "tsConfigPath": "apps/mail-worker/tsconfig.app.json"
+            }
+        },
+        "database": {
+            "type": "library",
+            "root": "libs/database",
+            "entryFile": "index",
+            "sourceRoot": "libs/database/src",
+            "compilerOptions": {
+                "tsConfigPath": "libs/database/tsconfig.lib.json"
+            }
+        },
+        "queue": {
+            "type": "library",
+            "root": "libs/queue",
+            "entryFile": "index",
+            "sourceRoot": "libs/queue/src",
+            "compilerOptions": {
+                "tsConfigPath": "libs/queue/tsconfig.lib.json"
+            }
+        },
+        "rendering": {
+            "type": "library",
+            "root": "libs/rendering",
+            "entryFile": "index",
+            "sourceRoot": "libs/rendering/src",
+            "compilerOptions": {
+                "tsConfigPath": "libs/rendering/tsconfig.lib.json"
+            }
+        },
+        "providers": {
+            "type": "library",
+            "root": "libs/providers",
+            "entryFile": "index",
+            "sourceRoot": "libs/providers/src",
+            "compilerOptions": {
+                "tsConfigPath": "libs/providers/tsconfig.lib.json"
+            }
+        },
+        "common": {
+            "type": "library",
+            "root": "libs/common",
+            "entryFile": "index",
+            "sourceRoot": "libs/common/src",
+            "compilerOptions": {
+                "tsConfigPath": "libs/common/tsconfig.lib.json"
+            }
+        }
+    }
+}

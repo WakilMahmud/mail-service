@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@iep/database": ["libs/database/src"],
+      "@iep/database/*": ["libs/database/src/*"],
+      "@iep/queue": ["libs/queue/src"],
+      "@iep/queue/*": ["libs/queue/src/*"],
+      "@iep/rendering": ["libs/rendering/src"],
+      "@iep/rendering/*": ["libs/rendering/src/*"],
+      "@iep/providers": ["libs/providers/src"],
+      "@iep/providers/*": ["libs/providers/src/*"],
+      "@iep/common": ["libs/common/src"],
+      "@iep/common/*": ["libs/common/src/*"]
+    }
+  }
+}

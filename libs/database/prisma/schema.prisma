@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Tenants ─────────────────────────────────────────────
+
+model Tenant {
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String    @db.VarChar(255)
+  apiKeyHash       String    @unique @map("api_key_hash") @db.VarChar(64)
+  rateLimitPerSec  Int       @default(100) @map("rate_limit_per_sec")
+  isActive         Boolean   @default(true) @map("is_active")
+  metadata         Json?     @db.JsonB
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  messages         Message[]
+  suppressionList  SuppressionEntry[]
+
+  @@map("tenants")
+}
+
+// ─── Messages ────────────────────────────────────────────
+
+enum MessageStatus {
+  queued
+  processing
+  sent
+  failed
+  bounced
+
+  @@map("message_status")
+}
+
+enum MessagePriority {
+  low
+  normal
+  high
+  critical
+
+  @@map("message_priority")
+}
+
+model Message {
+  id               String          @id @default(uuid()) @db.Uuid
+  tenantId         String          @map("tenant_id") @db.Uuid
+  idempotencyKey   String          @map("idempotency_key") @db.VarChar(255)
+  status           MessageStatus   @default(queued)
+  priority         MessagePriority @default(normal)
+
+  // Sender
+  fromEmail        String          @map("from_email") @db.VarChar(320)
+  fromName         String?         @map("from_name") @db.VarChar(255)
+
+  // Content (raw — caller-provided)
+  subject          String          @db.Text
+  htmlBody         String          @map("html_body") @db.Text
+  textBody         String?         @map("text_body") @db.Text
+  variables        Json?           @db.JsonB
+
+  // Content (rendered at send time)
+  renderedSubject  String?         @map("rendered_subject") @db.Text
+  renderedHtml     String?         @map("rendered_html") @db.Text
+  renderedText     String?         @map("rendered_text") @db.Text
+
+  // Delivery metadata
+  providerName     String?         @map("provider_name") @db.VarChar(50)
+  providerMsgId    String?         @map("provider_msg_id") @db.VarChar(255)
+  attemptCount     Int             @default(0) @map("attempt_count")
+  lastAttemptAt    DateTime?       @map("last_attempt_at") @db.Timestamptz
+  sentAt           DateTime?       @map("sent_at") @db.Timestamptz
+  failedAt         DateTime?       @map("failed_at") @db.Timestamptz
+  errorMessage     String?         @map("error_message") @db.Text
+
+  // Timestamps
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tenant           Tenant          @relation(fields: [tenantId], references: [id])
+  recipients       MessageRecipient[]
+  attachments      Attachment[]
+  events           MessageEvent[]
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, status])
+  @@index([status])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// ─── Recipients ──────────────────────────────────────────
+
+enum RecipientType {
+  to
+  cc
+  bcc
+
+  @@map("recipient_type")
+}
+
+model MessageRecipient {
+  id          String        @id @default(uuid()) @db.Uuid
+  messageId   String        @map("message_id") @db.Uuid
+  type        RecipientType
+  email       String        @db.VarChar(320)
+  name        String?       @db.VarChar(255)
+
+  message     Message       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("message_recipients")
+}
+
+// ─── Attachments ─────────────────────────────────────────
+
+model Attachment {
+  id          String   @id @default(uuid()) @db.Uuid
+  messageId   String   @map("message_id") @db.Uuid
+  filename    String   @db.VarChar(255)
+  mimeType    String   @map("mime_type") @db.VarChar(127)
+  sizeBytes   Int      @map("size_bytes")
+  s3Key       String   @map("s3_key") @db.VarChar(1024)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  message     Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("attachments")
+}
+
+// ─── Events (Audit Trail) ────────────────────────────────
+
+model MessageEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  messageId   String   @map("message_id") @db.Uuid
+  eventType   String   @map("event_type") @db.VarChar(50)
+  payload     Json?    @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  message     Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@index([eventType])
+  @@map("message_events")
+}
+
+// ─── Suppression List ────────────────────────────────────
+
+model SuppressionEntry {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  email       String   @db.VarChar(320)
+  reason      String   @db.VarChar(50)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, email])
+  @@map("suppression_list")
+}
