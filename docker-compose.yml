@@ -71,6 +71,14 @@ services:
       timeout: 5s
       retries: 5
 
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: iep-mailhog
+    restart: unless-stopped
+    ports:
+      - '${SMTP_PORT:-1025}:1025'
+      - '8025:8025'
+
 volumes:
   pgdata:
   rabbitmqdata:

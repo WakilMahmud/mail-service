@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
@@ -9,7 +9,7 @@ import type {
 } from '@iep/common';
 
 @Injectable()
-export class SmtpProvider implements IEmailProvider {
+export class SmtpProvider implements IEmailProvider, OnModuleInit {
     readonly name = 'smtp';
     private readonly logger = new Logger(SmtpProvider.name);
     private transporter!: Transporter;
@@ -21,6 +21,20 @@ export class SmtpProvider implements IEmailProvider {
             secure: this.configService.get<boolean>('smtp.secure'),
             auth: this.configService.get('smtp.auth'),
         });
+    }
+
+    async onModuleInit(): Promise<void> {
+        const host = this.configService.get<string>('smtp.host');
+        const port = this.configService.get<number>('smtp.port');
+        try {
+            await this.transporter.verify();
+            this.logger.log(`SMTP connection verified: ${host}:${port}`);
+        } catch (err) {
+            this.logger.warn(
+                `SMTP connection failed on startup (${host}:${port}): ${(err as Error).message}. ` +
+                `Emails will fail until the SMTP server is reachable.`,
+            );
+        }
     }
 
     async send(options: EmailProviderSendOptions): Promise<EmailProviderResponse> {
